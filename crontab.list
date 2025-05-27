@@ -1,0 +1,2 @@
+# 每天 12:00 执行签到脚本
+0 0 12 * * * python /ql/scripts/mi-community.py
