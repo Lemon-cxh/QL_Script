@@ -3,7 +3,7 @@
 QL_Script
 
 </h1>
-![Visitor Count](https://profile-counter.glitch.me/{YOUR USER}/count.svg)
+![Visitor Count](https://profile-counter.glitch.me/Lemon-cxh/count.svg)
 
 需要添加环境变量：
 - `mi_community_cookie`:https://account.xiaomi.com/pass/sns/wxapp/v2/tokenLogin 接口中的cookie
