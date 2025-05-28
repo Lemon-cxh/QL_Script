@@ -1,2 +1,2 @@
-# 每天 12:00 执行签到脚本
-0 0 12 * * * python /ql/scripts/mi-community.py
+# 任务名称：小米社区签到
+0 12 * * * python /ql/scripts/mi-community.py
