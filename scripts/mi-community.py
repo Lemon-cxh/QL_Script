@@ -1,3 +1,5 @@
+# cron:0 12 * * *
+# new Env("小米社区签到")
 import os
 import requests
 import json

@@ -1,2 +1,0 @@
-# 任务名称：小米社区签到
-0 12 * * * python /ql/scripts/mi-community.py
