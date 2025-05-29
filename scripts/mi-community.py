@@ -15,23 +15,21 @@ API_CHECKIN_URL = "https://api.vip.miui.com/mtop/planet/vip/member/addCommunityG
 WX_APP_ID = "wx240a4a764023c444"
 WX_REFERER = "https://servicewechat.com/wx240a4a764023c444/7/page-frame.html"
 WX_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090b19)XWEB/13639"
-WX_TOKEN = '8Rt3UyqDam/tVvIHcU4NGQVqsuOpCvc944ddPN7yNB1KJMMUwEDadTPUKmtEadGdWMFg9qj51hG/wb7TDWfcQZ++Klo2Gjig8zlPiYuxrTMAnNzVvGVwOyCBT4ESrA9dDD0Xus03fQU+ok1T51CUnvWASiy3U9cWGwatr2kHR8zEO1aLVQV/1pZdqf8ivaTj'
 
-
-def get_cookie_from_env():
+def get_token_from_env():
     """
-    从环境变量获取小米社区cookie
+    从环境变量获取小米社区token
     
     Returns:
-        str: 小米社区cookie值
+        str: 小米社区token值
         
     Raises:
         ValueError: 环境变量未设置时抛出
     """
-    mi_community_cookie = os.getenv("mi_community_cookie")
-    if not mi_community_cookie:
-        raise ValueError("环境变量中未找到mi_community_cookie，请确保已正确设置环境变量。")
-    return mi_community_cookie
+    mi_community_token = os.getenv("mi_community_token")
+    if not mi_community_token:
+        raise ValueError("环境变量中未找到mi_community_token，请确保已正确设置环境变量。")
+    return mi_community_token
 
     
 def get_user_info_from_env():
@@ -50,7 +48,7 @@ def get_user_info_from_env():
     return mi_community_user_info
 
 
-def get_login_data(cookie, user_info):
+def get_login_data(token, user_info):
     """
     发送登录请求，获取签到所需的参数
     
@@ -77,7 +75,7 @@ def get_login_data(cookie, user_info):
         "callback": ""
     }
     cookies = {
-        "wxSToken": WX_TOKEN,
+        "wxSToken": token,
         "userInfo": user_info
     }
     
@@ -189,16 +187,16 @@ def main():
     """
     try:
         # 获取环境变量中的凭证
-        cookie = get_cookie_from_env()
+        token = get_token_from_env()
         user_info = get_user_info_from_env()
         
         # 登录获取签到所需参数
-        login_data = get_login_data(cookie, user_info)
+        login_data = get_login_data(token, user_info)
         miui_vip_ph = login_data["miui_vip_ph"]
         service_token = login_data["serviceToken"]
         user_id = login_data["passportProfile"]["userId"]
         phone = login_data["passportProfile"]["phone"]
-            
+        QLAPI.updateEnv({ "mi_community_token": service_token })
         # 执行签到
         checkin_response = perform_checkin(miui_vip_ph, service_token, user_id)
         process_checkin_result(phone, checkin_response)
