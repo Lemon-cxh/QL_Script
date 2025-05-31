@@ -7,93 +7,42 @@ import logging
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('mi_community')
+logger = logging.getLogger('mi_community_checkin')
 
 # 常量定义
-API_LOGIN_URL = "https://account.xiaomi.com/pass/sns/wxapp/v2/tokenLogin"
 API_CHECKIN_URL = "https://api.vip.miui.com/mtop/planet/vip/member/addCommunityGrowUpPointByActionV2"
-WX_APP_ID = "wx240a4a764023c444"
 WX_REFERER = "https://servicewechat.com/wx240a4a764023c444/7/page-frame.html"
 WX_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090b19)XWEB/13639"
 
-def get_token_from_env():
+def get_checkin_params_from_env():
     """
-    从环境变量获取小米社区token
+    从环境变量获取签到所需的参数
     
     Returns:
-        str: 小米社区token值
+        tuple: (service_token, miui_vip_ph, user_id, phone)
         
     Raises:
         ValueError: 环境变量未设置时抛出
     """
-    mi_community_token = os.getenv("mi_community_token")
-    if not mi_community_token:
-        raise ValueError("环境变量中未找到mi_community_token，请确保已正确设置环境变量。")
-    return mi_community_token
-
+    service_token = os.getenv("mi_community_service_token")
+    miui_vip_ph = os.getenv("mi_community_miui_vip_ph")
+    user_id = os.getenv("mi_community_user_id")
+    phone = os.getenv("mi_community_phone")
     
-def get_user_info_from_env():
-    """
-    从环境变量获取小米社区用户信息
+    if not all([service_token, miui_vip_ph, user_id, phone]):
+        missing_vars = []
+        if not service_token:
+            missing_vars.append("mi_community_service_token")
+        if not miui_vip_ph:
+            missing_vars.append("mi_community_miui_vip_ph")
+        if not user_id:
+            missing_vars.append("mi_community_user_id")
+        if not phone:
+            missing_vars.append("mi_community_phone")
+        
+        raise ValueError(f"环境变量中缺少以下参数：{', '.join(missing_vars)}，请先运行登录脚本获取token。")
     
-    Returns:
-        str: 小米社区用户信息
-        
-    Raises:
-        ValueError: 环境变量未设置时抛出
-    """
-    mi_community_user_info = os.getenv("mi_community_user_info")
-    if not mi_community_user_info:
-        raise ValueError("环境变量中未找到mi_community_user_info，请确保已正确设置环境变量。")
-    return mi_community_user_info
-
-
-def get_login_data(token, user_info):
-    """
-    发送登录请求，获取签到所需的参数
-    
-    Args:
-        cookie: 小米社区cookie
-        user_info: 小米社区用户信息
-        
-    Returns:
-        dict: 登录响应数据，包含签到所需的token和用户信息
-        
-    Raises:
-        Exception: 请求失败时抛出
-    """
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Referer": WX_REFERER,
-        "User-Agent": WX_USER_AGENT,
-        "Accept-Encoding": "gzip, deflate, br"
-    }
-    data = {
-        "appid": WX_APP_ID,
-        "sid": "miui_vip",
-        "authType": "0",
-        "callback": ""
-    }
-    cookies = {
-        "wxSToken": token,
-        "userInfo": user_info
-    }
-    
-    try:
-        response = requests.post(API_LOGIN_URL, headers=headers, cookies=cookies, data=data)
-        response_data = response.json()
-        logger.info(f"登录接口响应：{response_data}")
-        
-        if response.status_code == 200:
-            return response_data
-        else:
-            raise Exception(f"登录请求失败，状态码：{response.status_code}")
-    except requests.RequestException as e:
-        logger.error(f"登录请求异常：{e}")
-        raise
-    except json.JSONDecodeError as e:
-        logger.error(f"登录响应解析失败：{e}")
-        raise ValueError("登录响应格式错误")
+    return service_token, miui_vip_ph, user_id, phone
 
 
 def perform_checkin(miui_vip_ph, service_token, user_id):
@@ -165,7 +114,7 @@ def process_checkin_result(phone, result):
     elif status == -1 and message == "加分失败":
         content = f"{phone} 签到失败：今天已经签到过了。{message}"
     elif code == 401:
-        content = f"{phone} 签到失败：参数错误或登录信息失效。"
+        content = f"{phone} 签到失败：参数错误或登录信息失效，请重新运行登录脚本。"
     else:
         content = f"{phone} 签到失败：{message}。返回结果：{result}"
     
@@ -186,22 +135,15 @@ def main():
     主函数，执行小米社区签到流程
     """
     try:
-        # 获取环境变量中的凭证
-        token = get_token_from_env()
-        user_info = get_user_info_from_env()
+        # 获取环境变量中的签到参数
+        service_token, miui_vip_ph, user_id, phone = get_checkin_params_from_env()
         
-        # 登录获取签到所需参数
-        login_data = get_login_data(token, user_info)
-        miui_vip_ph = login_data["miui_vip_ph"]
-        service_token = login_data["serviceToken"]
-        user_id = login_data["passportProfile"]["userId"]
-        phone = login_data["passportProfile"]["phone"]
-        QLAPI.updateEnv({ "mi_community_token": service_token })
         # 执行签到
         checkin_response = perform_checkin(miui_vip_ph, service_token, user_id)
         process_checkin_result(phone, checkin_response)
+        
     except Exception as e:
-        error_msg = f"执行过程中发生错误: {e}"
+        error_msg = f"签到过程中发生错误: {e}"
         logger.error(error_msg)
         
         # 发送错误通知
