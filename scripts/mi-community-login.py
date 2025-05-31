@@ -1,4 +1,4 @@
-# cron:0 0 0/2 * *
+# cron:0 * * * *
 # new Env("小米社区登录")
 import os
 import requests
